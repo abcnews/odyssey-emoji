@@ -1,0 +1,17 @@
+{
+  "name": "odyssey-emoji",
+  "version": "1.0.0",
+  "description": "A project generated from aunty's basic-app template.",
+  "license": "MIT",
+  "private": true,
+  "contributors": [
+    "Colin Gourlay <Gourlay.Colin@abc.net.au>"
+  ],
+  "aunty": "basic-app",
+  "scripts": {
+    "start": "aunty serve"
+  },
+  "devDependencies": {
+    "@abcnews/aunty": "5.6.x"
+  }
+}
