@@ -1,16 +1,17 @@
 const emojiRegex = require('emoji-regex');
 const styles = require('./styles.css');
 
+const ALLOWED_INLINE_TAGS = ['BR', 'EM', 'STRONG'];
 const EMOJI_ONE_URL_ROOT = '//cdn.jsdelivr.net/emojione/assets/3.1/png/64/';
 const EMOJI_REGEX = emojiRegex();
-const ZWJ_REGEX = /-200d/g;
 const VARIATION_REGEX = /-fe0[\da-f]/g;
+const ZWJ_REGEX = /-200d/g;
 
 function process(node) {
   const children = Array.prototype.slice.call(node.childNodes);
 
-  if (children.length && children.every(isTextNode)) {
-    replace(node);
+  if (children.length && children.every(isTextNodeOrAlowedInlineElement)) {
+    textNodesUnder(node).forEach(replace);
   } else {
     children.forEach(process);
   }
@@ -18,6 +19,24 @@ function process(node) {
 
 function isTextNode(node) {
   return node.nodeType === 3;
+}
+
+function isTextNodeOrAlowedInlineElement(node) {
+  return isTextNode(node) || ALLOWED_INLINE_TAGS.indexOf(node.tagName) > -1;
+}
+
+function textNodesUnder(node) {
+  let all = [];
+
+  for (node = node.firstChild; node; node = node.nextSibling) {
+    if (isTextNode(node)) {
+      all.push(node);
+    } else {
+      all = all.concat(textNodesUnder(node));
+    }
+  }
+
+  return all;
 }
 
 function basename(str) {
@@ -43,33 +62,36 @@ function basename(str) {
 }
 
 function replace(node) {
-  let html = node.outerHTML;
-  let out = [];
-  let match;
+  const text = node.nodeValue;
+  let replacements = [];
   let lastIndex = 0;
+  let match;
 
-  while ((match = EMOJI_REGEX.exec(html))) {
-    const src = `${EMOJI_ONE_URL_ROOT}${basename(match[0])
+  while ((match = EMOJI_REGEX.exec(text))) {
+    const img = document.createElement('img');
+
+    img.alt = match[0];
+    img.className = styles.emoji;
+    img.setAttribute('role', 'presentation');
+    img.src = `${EMOJI_ONE_URL_ROOT}${basename(match[0])
       .replace(ZWJ_REGEX, '')
       .replace(VARIATION_REGEX, '')}.png`;
-
-    out.push(html.slice(lastIndex, match.index));
-    out.push(`<img role="presentation" alt="${match[0]}" class=${styles.emoji} src="${src}" />`);
+    replacements.push(document.createTextNode(text.slice(lastIndex, match.index)));
+    replacements.push(img);
     lastIndex = EMOJI_REGEX.lastIndex;
   }
 
-  out.push(html.slice(lastIndex));
-
-  const transformedHtml = out.join('');
-
-  if (transformedHtml === node.outerHTML) {
+  if (replacements.length === 0) {
     return;
   }
 
-  const tmp = document.createElement('div');
+  replacements.push(document.createTextNode(text.slice(lastIndex)));
 
-  tmp.innerHTML = transformedHtml;
-  node.parentNode.replaceChild(tmp.firstChild, node);
+  replacements.forEach(replacement => {
+    node.parentNode.insertBefore(replacement, node);
+  });
+
+  node.parentNode.removeChild(node);
 }
 
 function init() {
