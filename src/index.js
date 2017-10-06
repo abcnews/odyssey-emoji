@@ -1,9 +1,10 @@
 const emojiRegex = require('emoji-regex');
 const styles = require('./styles.css');
 
-const EMOJI_ONE_URL_ROOT = '//www.abc.net.au/res/sites/news-projects/assets-emoji-one/1.0.0/';
-const EMOJI_ONE_DICT_URL = EMOJI_ONE_URL_ROOT + 'emoji.json';
+const EMOJI_ONE_URL_ROOT = '//cdn.jsdelivr.net/emojione/assets/3.1/png/64/';
 const EMOJI_REGEX = emojiRegex();
+const ZWJ_REGEX = /-200d/g;
+const VARIATION_REGEX = /-fe0[\da-f]/g;
 
 function process(node) {
   const children = Array.prototype.slice.call(node.childNodes);
@@ -42,30 +43,33 @@ function basename(str) {
 }
 
 function replace(node) {
-  const container = document.createElement('div');
-  let remainingText = node.outerHTML;
+  let html = node.outerHTML;
   let out = [];
   let match;
+  let lastIndex = 0;
 
-  while ((match = EMOJI_REGEX.exec(remainingText))) {
-    out.push(remainingText.slice(0, match.index));
-    out.push(
-      `<img role="presentation" alt="${match[0]}" class=${styles.emoji} src="${EMOJI_ONE_URL_ROOT}svg/${basename(
-        match[0]
-      )}.svg" />`
-    );
+  while ((match = EMOJI_REGEX.exec(html))) {
+    const src = `${EMOJI_ONE_URL_ROOT}${basename(match[0])
+      .replace(ZWJ_REGEX, '')
+      .replace(VARIATION_REGEX, '')}.png`;
 
-    remainingText = remainingText.slice(match.index + match[0].length);
+    out.push(html.slice(lastIndex, match.index));
+    out.push(`<img role="presentation" alt="${match[0]}" class=${styles.emoji} src="${src}" />`);
+    lastIndex = EMOJI_REGEX.lastIndex;
   }
 
-  out.push(remainingText);
+  out.push(html.slice(lastIndex));
 
-  const html = out.join('');
+  const transformedHtml = out.join('');
 
-  if (html !== node.outerHTML) {
-    container.innerHTML = html;
-    node.parentNode.replaceChild(container.firstChild, node);
+  if (transformedHtml === node.outerHTML) {
+    return;
   }
+
+  const tmp = document.createElement('div');
+
+  tmp.innerHTML = transformedHtml;
+  node.parentNode.replaceChild(tmp.firstChild, node);
 }
 
 function init() {
