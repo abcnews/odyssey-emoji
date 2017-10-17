@@ -5,4 +5,9 @@
   line-height: 1.4em;
   text-align: center;
   vertical-align: top;
+
+  /* Variable size with --emoji-glyph-size custom property */
+  min-width: var(--emoji-glyph-size, 1.4em);
+  height: var(--emoji-glyph-size, 1.4em);
+  line-height: var(--emoji-glyph-size, 1.4em);
 }
