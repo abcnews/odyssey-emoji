@@ -12,7 +12,7 @@
     "start": "aunty serve"
   },
   "devDependencies": {
-    "@abcnews/aunty": "5.6.x"
+    "@abcnews/aunty": "5.7.x"
   },
   "dependencies": {
     "emoji-regex": "^6.5.1"
