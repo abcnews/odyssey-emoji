@@ -1,5 +1,6 @@
-const emojiRegex = require('emoji-regex');
-const styles = require('./styles.css');
+import { whenOdysseyLoaded } from '@abcnews/env-utils';
+import emojiRegex from 'emoji-regex';
+import styles from './styles.css';
 
 const ALLOWED_INLINE_TAGS = ['BR', 'EM', 'STRONG'];
 const EMOJI_ONE_URL_ROOT = '//cdn.jsdelivr.net/emojione/assets/3.1/png/64/';
@@ -73,9 +74,7 @@ function replace(node) {
     img.alt = match[0];
     img.className = styles.emoji;
     img.setAttribute('role', 'presentation');
-    img.src = `${EMOJI_ONE_URL_ROOT}${basename(match[0])
-      .replace(ZWJ_REGEX, '')
-      .replace(VARIATION_REGEX, '')}.png`;
+    img.src = `${EMOJI_ONE_URL_ROOT}${basename(match[0]).replace(ZWJ_REGEX, '').replace(VARIATION_REGEX, '')}.png`;
     replacements.push(document.createTextNode(text.slice(lastIndex, match.index)));
     replacements.push(img);
     lastIndex = EMOJI_REGEX.lastIndex;
@@ -94,14 +93,4 @@ function replace(node) {
   node.parentNode.removeChild(node);
 }
 
-function init() {
-  process(document.querySelector('.Main'));
-}
-
-if (window.__ODYSSEY__) {
-  init();
-} else {
-  window.addEventListener('odyssey:api', e => {
-    init();
-  });
-}
+whenOdysseyLoaded.then(() => process(document.querySelector('.Main')));
